@@ -25,6 +25,6 @@ Space (or K) plays and pauses the 90-second film. The arrow keys step one beat. 
 
 ## Settings
 
-`NEXT_PUBLIC_RESUME_URL` overrides the resume link. It defaults to the resume linked from the GitHub profile.
+`NEXT_PUBLIC_RESUME_URL` overrides the resume link. It defaults to `public/Suchith_Sara_Resume.docx`, served by the site.
 
 Footage notes are in `docs/MEDIA.md`.
