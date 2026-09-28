@@ -60,11 +60,17 @@ export function collectCues(root: ParentNode): Cue[] {
   });
 }
 
-export function createCueRenderer(cues: Cue[], reduced: boolean) {
+/** Called when the film moves forward into a cue's window (for sound). */
+export type CueEnter = (el: Element) => void;
+
+export function createCueRenderer(cues: Cue[], reduced: boolean, onEnter?: CueEnter) {
+  let prev = -1;
   return (t: number) => {
+    const forward = prev >= 0 && t > prev && t - prev < 2;
     for (const c of cues) {
       const el = c.el as HTMLElement;
       const on = t >= c.tin && t <= c.tout;
+      if (forward && onEnter && prev < c.tin && t >= c.tin) onEnter(el);
       setStyle(el, 'visibility', on ? 'visible' : 'hidden');
       if (!on || c.fx === 'none') continue;
 
@@ -134,5 +140,6 @@ export function createCueRenderer(cues: Cue[], reduced: boolean) {
         }
       }
     }
+    prev = t;
   };
 }

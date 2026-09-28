@@ -15,7 +15,7 @@ npm run build   # static site in out/
 - `lib/clock.ts`: film time from scroll, from Play (wall time), or from the self-playing opening.
 - `lib/cues.ts`: scene markup carries `data-in` / `data-out` / `data-fx`, and one renderer animates it all.
 - `lib/plates.ts`: two video elements. Moving forward, the video plays natively with its speed chasing the film; only backward motion seeks.
-- `lib/sound.ts`: optional ambience (off until the visitor turns it on).
+- `lib/sound.ts`, `lib/music.ts`, `lib/sfx.ts`: optional sound (off until the visitor turns it on, or presses Play the film): a generative score whose mood follows each section, clip ambience, sound effects for type and counters, and the scored countdown. All synthesised with Web Audio.
 - `scenes/`: one file per scene.
 - `/text/`: the same content as a plain document, which is also the no-JavaScript fallback.
 

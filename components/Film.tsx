@@ -5,6 +5,7 @@ import { scenes } from '@/content/film';
 import { range, setStyle } from '@/lib/anim';
 import { FilmClock } from '@/lib/clock';
 import { collectCues, createCueRenderer } from '@/lib/cues';
+import type { SfxKind } from '@/lib/sfx';
 import { PlateManager } from '@/lib/plates';
 import { Sound } from '@/lib/sound';
 import { formatLength, nextBeat, TOTAL_VH, timeToVh } from '@/lib/timeline';
@@ -21,6 +22,16 @@ const POINT: [number, number, number, number][] = [
   [77.5, 77.8, 78.1, 78.4],
   [84.0, 84.4, 85.2, 85.8],
 ];
+
+// Which sound effect, if any, a piece of type makes as it arrives.
+function sfxFor(el: Element): SfxKind | null {
+  if (el.getAttribute('data-fx') === 'none' || el.getAttribute('data-fx') === 'draw' || el.getAttribute('data-fx') === 'cut') return null;
+  if (el.matches('.stage-item, .three-lines p')) return 'stage';
+  if (el.closest('.spotlight-lines') || el.matches('.lab-what, .lab-why')) return 'line';
+  if (el.matches('.spotlight-title, .title-l, .statement, .systems-word, .big-number, .origin-name, .contact-line, .contact-name, .count-n, .lab-title')) return 'title';
+  if (el.matches('.pin, .chapter, .telemetry, .corner, .role, .unit, .eyebrow, .keeps-moving, .slate-lines, .origin-roles, .contact-invite, .recognition, .lab-stack, .flow li, .pipeline li, .journey-states li, .spotlight .mono, .contact-links > *')) return 'tick';
+  return null;
+}
 
 // Soft snap points: one per counter detent, plus the amber frame.
 const SNAPS = [0, 1, 2, 3, 4].map((i) => MAP_T.counter + MAP_T.step * (i + 0.5)).concat(MAP_T.amber + 0.45);
@@ -39,10 +50,18 @@ export function Film({ children }: { children: React.ReactNode }) {
     const plates = new PlateManager(Array.from(stage.querySelectorAll('video')), reduced);
     off.push(clock.subscribe((t) => plates.render(t)));
 
-    off.push(clock.subscribe(createCueRenderer(collectCues(stage), reduced)));
+    const sound = new Sound();
+    off.push(clock.subscribe(createCueRenderer(collectCues(stage), reduced, (el) => {
+      const kind = sfxFor(el);
+      if (kind) sound.sfx(kind);
+    })));
 
     const mapRoot = stage.querySelector<HTMLElement>('[data-scene="the-map"]');
-    const map = mapRoot ? createMapAnimator(mapRoot, reduced) : null;
+    const map = mapRoot
+      ? createMapAnimator(mapRoot, reduced, (shown, total, forward) => {
+          if (forward && shown % 3 === 0) sound.sfx('count', shown / total);
+        })
+      : null;
     if (map) off.push(clock.subscribe(map.render));
 
     const point = stage.querySelector<HTMLElement>('[data-point]');
@@ -55,7 +74,6 @@ export function Film({ children }: { children: React.ReactNode }) {
       setStyle(point, 'transform', reduced ? 'none' : `scale(${(1 + burst * 2.5).toFixed(3)})`);
     }));
 
-    const sound = new Sound();
     off.push(clock.subscribe((t) => sound.render(t)));
     const soundButton = stage.querySelector<HTMLButtonElement>('[data-sound]');
     const toggleSound = () => {

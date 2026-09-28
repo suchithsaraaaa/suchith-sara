@@ -5,7 +5,7 @@ import { drawIdols, MAP_T } from './geometry';
 // The parts of scene 05 that are more than timing: the counter's detents,
 // the closing letterbox, the travelling packet, and the station marks
 // counting themselves in.
-export function createMapAnimator(root: HTMLElement, reduced: boolean) {
+export function createMapAnimator(root: HTMLElement, reduced: boolean, onStation?: (shown: number, total: number, forward: boolean) => void) {
   const counter = root.querySelector<HTMLElement>('[data-counter]')!;
   const detents = Array.from(root.querySelectorAll<HTMLElement>('[data-detent]'));
   const bars = Array.from(root.querySelectorAll<HTMLElement>('.letterbox-bar'));
@@ -38,6 +38,7 @@ export function createMapAnimator(root: HTMLElement, reduced: boolean) {
 
     const shown = Math.round(range(t, MAP_T.stations[0], MAP_T.stations[1]) * marks.length);
     if (shown !== lastMarks) {
+      if (lastMarks >= 0) onStation?.(shown, marks.length, shown > lastMarks);
       lastMarks = shown;
       marks.forEach((m, k) => m.classList.toggle('is-on', k < shown));
       stationCount.textContent = String(shown);

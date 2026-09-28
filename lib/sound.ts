@@ -2,10 +2,14 @@ import { plateOpacity, plates, type ClipId } from '@/content/plates';
 import { mapStory } from '@/content/film';
 import { range } from './anim';
 import { MAP_T } from '@/scenes/map/geometry';
+import { moodAt, Music } from './music';
+import { Sfx, type SfxKind } from './sfx';
 
 // Optional sound. Off until the visitor turns it on (a user gesture, as
-// browsers require). Each clip's ambience loops as a bed whose gain follows
-// its plate; scenes without footage borrow the origin room tone.
+// browsers require). Three layers under one master:
+//   music   a continuous generative theme whose mood follows the section (lib/music.ts)
+//   beds    each clip's own ambience, quietly, following its plate
+//   sfx     type and counters arriving (lib/sfx.ts), plus the countdown score below
 //
 // The countdown in scene 05 is scored, all synthesised here, no files:
 //   from THE REQUIREMENT  a low drone that rises in pitch and brightness
@@ -21,6 +25,8 @@ export class Sound {
   private beds = new Map<ClipId, GainNode>();
   private drone: { gain: GainNode; filter: BiquadFilterNode; oscs: OscillatorNode[] } | null = null;
   private noise: AudioBuffer | null = null;
+  private music: Music | null = null;
+  private fx: Sfx | null = null;
   private lastDetent = -1;
   private lastT = 0;
   private t = 0;
@@ -33,11 +39,20 @@ export class Sound {
       this.master = this.ctx.createGain();
       this.master.gain.value = 0;
       this.master.connect(this.ctx.destination);
+      const musicBus = this.ctx.createGain();
+      musicBus.gain.value = 0.42;
+      musicBus.connect(this.master);
+      const sfxBus = this.ctx.createGain();
+      sfxBus.gain.value = 0.9;
+      sfxBus.connect(this.master);
+      this.music = new Music(this.ctx, musicBus);
+      this.fx = new Sfx(this.ctx, sfxBus, () => this.music!.chord());
       this.buildScore();
       const ids = Array.from(new Set(plates.map((p) => p.clip)));
       await Promise.all(ids.map((id) => this.load(id)));
     }
     await this.ctx.resume();
+    this.music?.resume();
     this.master!.gain.setTargetAtTime(0.9, this.ctx.currentTime, 0.3);
     this.lastT = this.t;
     this.render(this.t);
@@ -46,6 +61,12 @@ export class Sound {
   disable() {
     this.enabled = false;
     if (this.ctx && this.master) this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.15);
+    this.music?.pause();
+  }
+
+  /** A sound effect for type or a counter; ignored while sound is off. */
+  sfx(kind: SfxKind, amount = 0) {
+    if (this.enabled && this.fx) this.fx.play(kind, amount);
   }
 
   private async load(id: ClipId) {
@@ -192,7 +213,8 @@ export class Sound {
     if (t >= 70) gains.set('origin', 0.5);
     // Under the countdown the beds duck, so the drone carries it.
     const duck = 1 - 0.7 * range(t, TENSION[0], TENSION[0] + 1.5) * (t < MAP_T.cut ? 1 : 0);
-    for (const [id, g] of this.beds) g.gain.setTargetAtTime(silent ? 0 : (gains.get(id) ?? 0) * 0.8 * duck, now, silent ? 0.005 : 0.12);
+    for (const [id, g] of this.beds) g.gain.setTargetAtTime(silent ? 0 : (gains.get(id) ?? 0) * 0.35 * duck, now, silent ? 0.005 : 0.12);
+    this.music?.setMood(moodAt(t));
 
     // The drone rises from THE REQUIREMENT to the cut, then stops dead.
     if (this.drone) {
@@ -219,6 +241,7 @@ export class Sound {
   }
 
   dispose() {
+    this.music?.dispose();
     this.ctx?.close();
   }
 }
