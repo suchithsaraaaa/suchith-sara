@@ -5,18 +5,19 @@
 //   line   a spotlight line: a small chime
 //   tick   small telemetry: a barely-there click
 //   count  a counter stepping: a click that rises with the count
+//   key    a statement typing itself: one soft mechanical key per letter
 //
 // Each kind has a minimum gap, so a burst of cues reads as one gesture
 // rather than a clatter.
 
-export type SfxKind = 'title' | 'stage' | 'line' | 'tick' | 'count';
+export type SfxKind = 'title' | 'stage' | 'line' | 'tick' | 'count' | 'key';
 
-const GAP: Record<SfxKind, number> = { title: 0.22, stage: 0.12, line: 0.18, tick: 0.09, count: 0.05 };
+const GAP: Record<SfxKind, number> = { title: 0.22, stage: 0.12, line: 0.18, tick: 0.09, count: 0.05, key: 0.045 };
 
 const hz = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 
 export class Sfx {
-  private last: Record<SfxKind, number> = { title: 0, stage: 0, line: 0, tick: 0, count: 0 };
+  private last: Record<SfxKind, number> = { title: 0, stage: 0, line: 0, tick: 0, count: 0, key: 0 };
   private noise: AudioBuffer;
   private lineIndex = 0;
 
@@ -45,12 +46,20 @@ export class Sfx {
       case 'line': {
         const note = c[1 + (this.lineIndex++ % 4)] + 24;
         this.tone(hz(note), now, 0.04, 0.9, 'sine');
-        this.tone(hz(note) * 2.01, now, 0.008, 0.5, 'sine');
+        this.tone(hz(note) * 2, now, 0.008, 0.5, 'sine');
         break;
       }
       case 'tick':
         this.click(now, 0.018, 2600);
         break;
+      case 'key': {
+        // A soft thock and a tick of plastic, a little different every time.
+        const r = Math.random();
+        this.tone(150 + r * 60, now, 0.05 + r * 0.02, 0.05, 'sine');
+        this.click(now, 0.05 + r * 0.03, 1800 + r * 1600);
+        if (amount === 1) this.click(now + 0.012, 0.03, 900); // a space bar is heavier
+        break;
+      }
       case 'count':
         this.tone(900 + amount * 900, now, 0.02, 0.06, 'square');
         break;

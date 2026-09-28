@@ -25,6 +25,8 @@ type Cue = {
   y: number;
   parts?: { leader?: HTMLElement; label?: HTMLElement };
   letters?: { el: HTMLElement; slot: number }[];
+  text?: string;   // for typing: the statement's characters
+  typed?: number;  // how many have been revealed so far
 };
 
 const num = (v: string | undefined, dflt: number) => (v === undefined || v === '' ? dflt : Number(v));
@@ -50,6 +52,7 @@ export function collectCues(root: ParentNode): Cue[] {
         label: el.querySelector<HTMLElement>('[data-part="label"]') ?? undefined,
       };
     }
+    if (fx === 'wipe' && el.classList.contains('statement')) cue.text = el.textContent ?? '';
     if (fx === 'track') {
       cue.letters = Array.from(el.querySelectorAll<HTMLElement>('[data-letter]')).map((l) => {
         const sib = Array.from(l.parentElement!.children);
@@ -62,8 +65,10 @@ export function collectCues(root: ParentNode): Cue[] {
 
 /** Called when the film moves forward into a cue's window (for sound). */
 export type CueEnter = (el: Element) => void;
+/** Called for each character a statement reveals as it wipes in, moving forward. */
+export type CueType = (char: string) => void;
 
-export function createCueRenderer(cues: Cue[], reduced: boolean, onEnter?: CueEnter) {
+export function createCueRenderer(cues: Cue[], reduced: boolean, onEnter?: CueEnter, onType?: CueType) {
   let prev = -1;
   return (t: number) => {
     const forward = prev >= 0 && t > prev && t - prev < 2;
@@ -101,6 +106,11 @@ export function createCueRenderer(cues: Cue[], reduced: boolean, onEnter?: CueEn
           setStyle(el, 'transform', `translate3d(0,${((1 - p) * 18).toFixed(2)}px,0)`);
           break;
         case 'wipe':
+          if (c.text && onType) {
+            const n = Math.floor(range(t, c.tin, c.tin + c.d) * c.text.length);
+            if (forward && n > (c.typed ?? 0)) onType(c.text[n - 1]);
+            c.typed = n;
+          }
           setStyle(el, 'opacity', (1 - q).toFixed(3));
           setStyle(el, 'clip-path', `inset(-0.2em ${(100 * (1 - p)).toFixed(2)}% -0.2em 0)`);
           break;

@@ -213,7 +213,7 @@ export class Sound {
     if (t >= 70) gains.set('origin', 0.5);
     // Under the countdown the beds duck, so the drone carries it.
     const duck = 1 - 0.7 * range(t, TENSION[0], TENSION[0] + 1.5) * (t < MAP_T.cut ? 1 : 0);
-    for (const [id, g] of this.beds) g.gain.setTargetAtTime(silent ? 0 : (gains.get(id) ?? 0) * 0.35 * duck, now, silent ? 0.005 : 0.12);
+    for (const [id, g] of this.beds) g.gain.setTargetAtTime(silent ? 0 : (gains.get(id) ?? 0) * 0.2 * duck, now, silent ? 0.005 : 0.12);
     this.music?.setMood(moodAt(t));
 
     // The drone rises from THE REQUIREMENT to the cut, then stops dead.
