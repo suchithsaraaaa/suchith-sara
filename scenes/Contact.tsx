@@ -1,4 +1,4 @@
-import { contact, person, recognition } from '@/content/film';
+import { contact, person, recognition, skills } from '@/content/film';
 import { cue, Letters, Scene } from './parts';
 
 // 08 · Contact, 84–90 s. The film rests here.
@@ -17,6 +17,21 @@ export function Contact() {
         <p className="contact-invite" {...cue(86.6, undefined, 'rise', { d: 0.6 })}>
           Let’s build something difficult.<span className="cursor" aria-hidden="true" />
         </p>
+      </div>
+      {/* Key skills, drifting past on the right: text only, a CSS loop, still for reduced motion. */}
+      <div className="skills-reel" aria-label="Key skills" {...cue(86.2, undefined, 'fade', { d: 1.2 })}>
+        <div className="skills-track">
+          {[0, 1].map((copy) => (
+            <div className="skills-set" key={copy} aria-hidden={copy === 1 || undefined}>
+              {skills.map(([group, items]) => (
+                <section key={group} className="skills-group">
+                  <h3 className="mono">{group}</h3>
+                  <ul>{items.map((s) => <li key={s}>{s}</li>)}</ul>
+                </section>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       <p className="recognition mono" {...cue(87.4, undefined, 'fade', { d: 0.5 })}>{recognition.join(' / ')}</p>
       <nav className="contact-links mono" aria-label="Contact">
