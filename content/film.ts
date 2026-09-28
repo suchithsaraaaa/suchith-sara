@@ -142,10 +142,14 @@ export const nestiq = {
 export const contact = {
   github: 'https://github.com/suchithsaraaaa',
   email: 'suchithsara.work@gmail.com',
+  phone: '+91 86864 78510',
   linkedin: 'https://www.linkedin.com/in/suchith-sara-903133339/',
   // Served from this site (public/); override with NEXT_PUBLIC_RESUME_URL.
   resume: process.env.NEXT_PUBLIC_RESUME_URL || '/Suchith_Sara_Resume.pdf',
 };
+
+/** The phone number as a tel: link. */
+export const telHref = `tel:${contact.phone.replace(/\s/g, '')}`;
 
 /** Opens a new message to the contact address in Gmail. */
 export const gmailCompose = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}`;

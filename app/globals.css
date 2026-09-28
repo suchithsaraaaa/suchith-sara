@@ -890,6 +890,22 @@ body {
   color: var(--steel);
 }
 
+.contact-direct {
+  position: absolute;
+  left: var(--inset);
+  bottom: calc(var(--gutter) + 170px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--steel);
+}
+.contact-direct a { color: var(--bone); text-decoration: none; }
+.contact-direct a:first-child { text-transform: none; letter-spacing: 0.04em; }
+.contact-direct a:hover { color: var(--signal); }
+
 .resq-spec { gap: 4px; }
 .resq-spec b { margin-top: 8px; color: var(--signal); }
 .spec-link {
@@ -1163,7 +1179,9 @@ body {
   .flow--high { bottom: calc(var(--gutter) + 150px); }
   .telemetry--tl { top: calc(var(--gutter) + 96px); }
   .resq-title { top: 30%; }
-  .recognition { bottom: calc(var(--gutter) + 300px); max-width: 80vw; line-height: 1.8; }
+  .recognition { bottom: calc(var(--gutter) + 358px); max-width: 80vw; line-height: 1.8; }
+  .contact-direct { bottom: calc(var(--gutter) + 294px); flex-direction: column; gap: 6px; }
+  .contact-direct > span { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

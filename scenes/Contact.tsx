@@ -1,4 +1,4 @@
-import { contact, gmailCompose, person, recognition, skills } from '@/content/film';
+import { contact, gmailCompose, person, recognition, skills, telHref } from '@/content/film';
 import { cue, Letters, Scene } from './parts';
 
 // 08 · Contact, 84–90 s. The film rests here.
@@ -33,6 +33,11 @@ export function Contact() {
           ))}
         </div>
       </div>
+      <p className="contact-direct mono" {...cue(87.0, undefined, 'fade', { d: 0.5 })}>
+        <a href={gmailCompose} target="_blank" rel="noopener">{contact.email}</a>
+        <span aria-hidden="true">/</span>
+        <a href={telHref}>{contact.phone}</a>
+      </p>
       <p className="recognition mono" {...cue(87.4, undefined, 'fade', { d: 0.5 })}>{recognition.join(' / ')}</p>
       <nav className="contact-links mono" aria-label="Contact">
         {links.map((l, i) =>

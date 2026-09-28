@@ -37,6 +37,7 @@ const personLd = {
   alumniOf: { '@type': 'CollegeOrUniversity', name: person.education.school },
   worksFor: { '@type': 'Organization', name: experience[0].org },
   email: `mailto:${contact.email}`,
+  telephone: contact.phone.replace(/\s/g, ''),
   sameAs: [contact.github, contact.linkedin],
 };
 
