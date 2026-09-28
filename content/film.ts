@@ -144,7 +144,7 @@ export const contact = {
   email: 'suchithsara.work@gmail.com',
   linkedin: 'https://www.linkedin.com/in/suchith-sara-903133339/',
   // Served from this site (public/); override with NEXT_PUBLIC_RESUME_URL.
-  resume: process.env.NEXT_PUBLIC_RESUME_URL || '/Suchith_Sara_Resume.docx',
+  resume: process.env.NEXT_PUBLIC_RESUME_URL || '/Suchith_Sara_Resume.pdf',
 };
 
 /** Opens a new message to the contact address in Gmail. */

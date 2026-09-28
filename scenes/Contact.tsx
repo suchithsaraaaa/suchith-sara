@@ -37,7 +37,7 @@ export function Contact() {
       <nav className="contact-links mono" aria-label="Contact">
         {links.map((l, i) =>
           l.href ? (
-            <a key={l.label} href={l.href} {...(l.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : l.href.endsWith('.docx') ? { download: '' } : {})} {...cue(87.1 + i * 0.1, undefined, 'rise', { d: 0.4 })}>{l.label}</a>
+            <a key={l.label} href={l.href} {...(/^https?:|\.pdf$/.test(l.href) ? { target: '_blank', rel: 'noopener' } : {})} {...cue(87.1 + i * 0.1, undefined, 'rise', { d: 0.4 })}>{l.label}</a>
           ) : (
             <span key={l.label} className="is-pending" aria-disabled="true" title="Available soon" {...cue(87.1 + i * 0.1, undefined, 'rise', { d: 0.4 })}>{l.label}</span>
           ),

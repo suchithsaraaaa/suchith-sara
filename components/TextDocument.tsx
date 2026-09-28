@@ -69,7 +69,7 @@ export function TextDocument({ filmHref }: { filmHref?: string }) {
         <li><a href={contact.github}>GitHub</a></li>
         <li><a href={gmailCompose} target="_blank" rel="noopener">{contact.email}</a></li>
         <li><a href={contact.linkedin}>LinkedIn</a></li>
-        {contact.resume && <li><a href={contact.resume} download>Resume (.docx)</a></li>}
+        {contact.resume && <li><a href={contact.resume} target="_blank" rel="noopener">Resume (PDF)</a></li>}
       </ul>
     </article>
   );
