@@ -168,10 +168,20 @@ export type Scene = {
 
 export const RUNTIME = 90;
 
+// Stretches of film time played slower so they can be read: [from, to, rate].
+// 0.4 means 1 film second takes 2.5 real seconds. See lib/timeline.ts.
+export const warp: [number, number, number][] = [
+  [16.0, 18.4, 0.34],  // 02 · experience in the spotlight
+  [24.5, 28.3, 0.3],   // 03 · SYSTEMS, then experience in the spotlight
+  [70, 78, 0.42],      // 06 · ResQMesh
+  [78, 84, 0.55],      // 07 · NestIQ
+  [84, 90, 0.8],       // 08 · Contact
+];
+
 export const scenes: Scene[] = [
   { id: 'origin', n: '01', label: 'Origin', title: 'Origin', t0: 0, t1: 8, segments: [[5.6, 40], [2.4, 120]], beats: [5.6, 6.8] },
-  { id: 'intelligence', n: '02', label: 'Intelligence', title: 'Intelligence', t0: 8, t1: 18, segments: [[10, 160]], beats: [8.6, 11, 13.5, 15.4, 16.6] },
-  { id: 'systems', n: '03', label: 'Systems', title: 'Systems', t0: 18, t1: 28, segments: [[10, 160]], beats: [18.4, 20.6, 23, 26.4] },
+  { id: 'intelligence', n: '02', label: 'Intelligence', title: 'Intelligence', t0: 8, t1: 18, segments: [[8, 128], [2, 120]], beats: [9.4, 11.1, 12.8, 14.5, 16.5, 17.4] },
+  { id: 'systems', n: '03', label: 'Systems', title: 'Systems', t0: 18, t1: 28, segments: [[6.5, 104], [3.5, 240]], beats: [18.6, 19.8, 21, 22.2, 23.4, 25, 26.3, 27.5] },
   { id: 'real-world', n: '04', label: 'Real world', title: 'Real world', t0: 28, t1: 40, segments: [[12, 180]], beats: [28.6, 31, 34.3, 36.4, 39.2] },
   {
     id: 'the-map', n: '05', label: 'The map', title: 'The night the map went live', t0: 40, t1: 70,
@@ -179,7 +189,7 @@ export const scenes: Scene[] = [
     segments: [[2, 50], [2, 50], [3, 70], [3, 70], [2, 50], [2.5, 90], [2.5, 160], [1.5, 70], [2.5, 60], [3, 90], [2, 60], [2, 60], [2, 70]],
     beats: [40.6, 43, 45.5, 48.5, 50.6, 53.6, 54.75, 55.25, 55.75, 56.25, 56.75, 57.8, 59.4, 62, 63.4, 65, 66.5, 67.1, 67.7, 68.8, 69.5],
   },
-  { id: 'resqmesh', n: '06', label: 'ResQMesh', title: 'ResQMesh', t0: 70, t1: 78, segments: [[2, 90], [2, 70], [4, 140]], beats: [70.5, 71.4, 72.6, 73.4, 74.6, 76, 77.2] },
-  { id: 'nestiq', n: '07', label: 'NestIQ', title: 'NestIQ', t0: 78, t1: 84, segments: [[6, 200]], beats: [78.6, 79.8, 81.0, 82.2, 83.2] },
-  { id: 'contact', n: '08', label: 'Contact', title: 'Contact', t0: 84, t1: 90, segments: [[6, 100]], beats: [85.4, 86.8, 90] },
+  { id: 'resqmesh', n: '06', label: 'ResQMesh', title: 'ResQMesh', t0: 70, t1: 78, segments: [[2, 140], [2, 130], [4, 270]], beats: [70.5, 71.4, 72.6, 73.4, 74.6, 76, 77.2] },
+  { id: 'nestiq', n: '07', label: 'NestIQ', title: 'NestIQ', t0: 78, t1: 84, segments: [[6, 320]], beats: [78.6, 79.8, 81.0, 82.2, 83.2] },
+  { id: 'contact', n: '08', label: 'Contact', title: 'Contact', t0: 84, t1: 90, segments: [[6, 140]], beats: [85.4, 86.8, 90] },
 ];

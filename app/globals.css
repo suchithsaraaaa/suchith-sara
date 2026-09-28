@@ -294,6 +294,63 @@ body {
 .stage-tick { position: relative; width: 28px; height: 2px; background: rgba(233, 231, 225, 0.16); }
 .stage-tick b { position: absolute; inset: 0; background: var(--bone); will-change: opacity; }
 
+/* Experience in the spotlight: centre stage, the footage dimmed behind. */
+.spotlight {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--inset);
+}
+
+.spotlight-light {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(42% 46% at 50% 50%, rgba(233, 231, 225, 0.07), rgba(233, 231, 225, 0) 70%),
+    radial-gradient(70% 70% at 50% 50%, rgba(2, 4, 6, 0) 35%, rgba(2, 4, 6, 0.75) 100%);
+  will-change: opacity;
+}
+
+.spotlight-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  max-width: 980px;
+}
+
+.spotlight-org { margin: 0; font-size: 12px; letter-spacing: 0.34em; color: var(--signal); }
+
+.spotlight-title {
+  margin: 0;
+  font-size: clamp(40px, 5.6vw, 92px);
+  line-height: 1;
+  font-weight: 250;
+  font-stretch: 116%;
+  letter-spacing: -0.015em;
+}
+
+.spotlight-dates { margin: 0; font-size: 11px; letter-spacing: 0.3em; color: var(--steel); }
+
+.spotlight-lines {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: clamp(16px, 1.35vw, 21px);
+  line-height: 1.5;
+  font-weight: 350;
+  color: var(--mist);
+}
+
+.spotlight [data-fx='roll'] { will-change: transform, opacity; }
+
 /* A pin is a zero-size anchor at a point in the footage. */
 .pin { position: absolute; width: 0; height: 0; will-change: transform, opacity; }
 

@@ -103,6 +103,33 @@ export function Stages({ items, tin, step, tout, label }: {
   );
 }
 
+/**
+ * Experience in the spotlight: the footage dims, a soft light opens behind
+ * the centre of frame, and the role takes the stage, then its organisation
+ * and dates, then what the work was, one line at a time.
+ */
+export function Spotlight({ tin, tout, title, org, dates, lines }: {
+  tin: number; tout: number; title: string; org: string; dates: string; lines: string[];
+}) {
+  const span = tout - tin;
+  const at = (k: number) => tin + span * k; // positions as fractions of the window
+  return (
+    <div className="spotlight" {...cue(tin, tout, 'none')}>
+      <div className="spotlight-light" aria-hidden="true" {...cue(tin, tout, 'fade', { d: span * 0.2, do: span * 0.12 })} />
+      <div className="spotlight-body">
+        <p className="mono spotlight-org" {...cue(at(0.1), tout, 'roll', { d: span * 0.12, do: span * 0.1 })}>{org}</p>
+        <h3 className="spotlight-title" {...cue(at(0.03), tout, 'roll', { d: span * 0.16, do: span * 0.1 })}>{title}</h3>
+        <p className="mono spotlight-dates" {...cue(at(0.16), tout, 'roll', { d: span * 0.12, do: span * 0.1 })}>{dates}</p>
+        <ul className="spotlight-lines">
+          {lines.map((l, i) => (
+            <li key={l} {...cue(at(0.3 + i * 0.16), tout, 'roll', { d: span * 0.12, do: span * 0.1 })}>{l}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 /** Chapter mark: a role, surfacing inside the scene whose world it belongs to. */
 export function Chapter({ tin, tout, title, org, dates, note }: { tin: number; tout: number; title: string; org: string; dates: string; note?: string }) {
   return (

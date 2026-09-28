@@ -22,8 +22,8 @@ export type Plate = {
 
 export const plates: Plate[] = [
   { clip: 'origin', t0: 0, t1: 8.6, v: [[0, 0], [8.6, 10]], fi: 0, fo: 0.6 },
-  { clip: 'intelligence', t0: 8.0, t1: 18.4, v: [[8, 0], [18.4, 11]], fi: 0.6, fo: 0.5 },
-  { clip: 'systems', t0: 18.0, t1: 28.3, v: [[18, 0], [28, 10]], fi: 0.5, fo: 0.5 },
+  { clip: 'intelligence', t0: 8.0, t1: 18.4, v: [[8, 0], [18.4, 11]], dim: [[16.0, 1], [16.5, 0.28]], fi: 0.6, fo: 0.5 },
+  { clip: 'systems', t0: 18.0, t1: 28.3, v: [[18, 0], [28, 10]], dim: [[25.6, 1], [26.0, 0.26]], fi: 0.5, fo: 0.5 },
   { clip: 'real-world', t0: 28.0, t1: 39.4, v: [[28, 0], [38, 10]], fi: 0.5, fo: 1.4 },
   // 05 · the night the map went live
   { clip: 'map-a', t0: 42.0, t1: 47.3, v: [[42, 0], [47.3, 10]], fi: 0.8, fo: 0.4 },

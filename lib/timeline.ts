@@ -1,4 +1,4 @@
-import { RUNTIME, scenes, type Scene } from '@/content/film';
+import { RUNTIME, scenes, warp, type Scene } from '@/content/film';
 
 // Piecewise-linear map between scroll distance (in viewport heights) and film
 // time (seconds). Built once from the scene table; every lookup is pure, so the
@@ -47,7 +47,45 @@ export function nextBeat(t: number, dir: 1 | -1): number {
   return 0;
 }
 
+// ---- Presentation time ------------------------------------------------------
+// Scenes are authored in film time (0–90). Some stretches are played slower so
+// they can be read; `warp` lists them. Presentation time is what the viewer
+// experiences: what Play advances at 1×, and what the timecode shows.
+
+const pres: { a: number; p: number }[] = [{ a: 0, p: 0 }];
+{
+  let a = 0, p = 0;
+  for (const [a0, a1, rate] of warp) {
+    p += a0 - a; // unwarped stretch before this one
+    pres.push({ a: a0, p });
+    p += (a1 - a0) / rate;
+    pres.push({ a: a1, p });
+    a = a1;
+  }
+  pres.push({ a: RUNTIME, p: p + (RUNTIME - a) });
+}
+
+function lerpPres(x: number, from: 'a' | 'p', to: 'a' | 'p') {
+  if (x <= 0) return 0;
+  for (let i = 1; i < pres.length; i++) {
+    const u = pres[i - 1], v = pres[i];
+    if (x <= v[from]) return v[from] === u[from] ? v[to] : u[to] + ((x - u[from]) / (v[from] - u[from])) * (v[to] - u[to]);
+  }
+  return pres[pres.length - 1][to];
+}
+
+/** Film (authored) time to presentation time, and back. */
+export const toPresentation = (t: number) => lerpPres(t, 'a', 'p');
+export const fromPresentation = (p: number) => lerpPres(p, 'p', 'a');
+export const PRESENTATION_LENGTH = pres[pres.length - 1].p;
+
+/** mm:ss of presentation time, for a film time. */
 export function formatTime(t: number): string {
-  const s = Math.max(0, Math.min(RUNTIME, Math.floor(t)));
+  const s = Math.max(0, Math.floor(toPresentation(Math.min(RUNTIME, t))));
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
+
+export const formatLength = () => {
+  const s = Math.round(PRESENTATION_LENGTH);
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+};

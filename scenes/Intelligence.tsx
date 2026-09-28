@@ -1,11 +1,11 @@
 import { aiStack, experience } from '@/content/film';
-import { Chapter, cue, KeepCase, Scene, Stages } from './parts';
+import { KeepCase, Scene, Spotlight, Stages } from './parts';
 
 // 02 · Intelligence, 8–18 s. Footage: documents stream into a vector space.
 // The retrieval pipeline reads out in place, one stage at a time, while the
-// camera flies through it; then the scene names itself.
+// camera flies through it; then the work behind it takes the stage.
 export function Intelligence() {
-  const intern = experience.find((r) => r.scene === 'intelligence')!;
+  const role = experience.find((r) => r.scene === 'intelligence')!;
   return (
     <Scene id="intelligence" tin={8.6} tout={18.3} label="Intelligence">
       <Stages
@@ -20,10 +20,18 @@ export function Intelligence() {
           { name: aiStack.hardware, sub: aiStack.deployment },
         ]}
       />
-      <h2 className="title-l title-l--low" {...cue(16.3, 18.2, 'wipe', { d: 1.0, do: 0.6 })}>AI systems</h2>
-      <div className="chapters">
-        <Chapter tin={15.8} tout={18.2} title={intern.title} org={intern.org} dates={intern.dates} />
-      </div>
+      <Spotlight
+        tin={16.1}
+        tout={18.3}
+        title={role.title}
+        org={role.org}
+        dates={role.dates}
+        lines={[
+          'Architected an on-premises RAG system for internal government use.',
+          'Two-tier Llama 3.1 8B and 3.3 70B, AWQ INT4, served by vLLM on 6 × A100 80GB.',
+          'Multilingual retrieval across English, Telugu and Hindi.',
+        ]}
+      />
     </Scene>
   );
 }

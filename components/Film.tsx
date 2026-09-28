@@ -7,7 +7,7 @@ import { FilmClock } from '@/lib/clock';
 import { collectCues, createCueRenderer } from '@/lib/cues';
 import { PlateManager } from '@/lib/plates';
 import { Sound } from '@/lib/sound';
-import { nextBeat, TOTAL_VH, timeToVh } from '@/lib/timeline';
+import { formatLength, nextBeat, TOTAL_VH, timeToVh } from '@/lib/timeline';
 import { MAP_T } from '@/scenes/map/geometry';
 import { createMapAnimator } from '@/scenes/map/animate';
 import { createHudRenderer, Hud, PlayIcon } from './Hud';
@@ -180,7 +180,7 @@ export function Film({ children }: { children: React.ReactNode }) {
           <button type="button" className="cta-play" data-play aria-pressed="false" aria-label="Play the film">
             <PlayIcon />
             <span className="mono">Play the film</span>
-            <span className="mono cta-len">01:30</span>
+            <span className="mono cta-len">{formatLength()}</span>
           </button>
           <p className="mono cta-or">or scroll at your own pace</p>
         </div>

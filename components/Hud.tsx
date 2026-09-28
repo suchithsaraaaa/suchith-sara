@@ -1,6 +1,6 @@
-import { RUNTIME, scenes } from '@/content/film';
+import { scenes } from '@/content/film';
 import { range, setStyle } from '@/lib/anim';
-import { formatTime, sceneIndexAt } from '@/lib/timeline';
+import { formatLength, formatTime, sceneIndexAt, toPresentation } from '@/lib/timeline';
 
 // Frame chrome: four corners of 11 px mono. Text changes only when the value
 // changes (the timecode at most once per second); the rail fills by transform.
@@ -8,7 +8,7 @@ export function Hud() {
   return (
     <div className="hud mono">
       <span className="hud-name" data-h="name">Suchith Sara</span>
-      <span className="hud-time" aria-hidden="true"><b data-h="time">00:00</b> / {formatTime(RUNTIME)}</span>
+      <span className="hud-time" aria-hidden="true"><b data-h="time">00:00</b> / {formatLength()}</span>
       <div className="hud-actions">
         <button type="button" className="hud-button" data-sound aria-pressed="false" aria-keyshortcuts="M">Sound off</button>
         <a className="hud-button" href="/text/">Read as text</a>
@@ -18,7 +18,7 @@ export function Hud() {
         <nav aria-label="Scenes" style={{ flex: 1, display: 'flex' }}>
           <ol className="rail">
             {scenes.map((s) => (
-              <li key={s.id} style={{ flexGrow: s.t1 - s.t0 }}>
+              <li key={s.id} style={{ flexGrow: toPresentation(s.t1) - toPresentation(s.t0) }}>
                 <a href={`#s-${s.id}`} data-scene-link={s.id}>
                   <span className="rail-track" />
                   <span className="rail-fill" data-h="fill" />

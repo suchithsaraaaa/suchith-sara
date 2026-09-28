@@ -1,9 +1,10 @@
 import { RUNTIME } from '@/content/film';
-import { TOTAL_VH, timeToVh, vhToTime } from './timeline';
+import { fromPresentation, toPresentation, TOTAL_VH, timeToVh, vhToTime } from './timeline';
 
 // The film's one clock. Film time comes from one of two sources:
 //   scroll  native scroll position, damped for a soft, iOS-like follow
-//   play    wall time, when the viewer presses Play (a 90-second presentation)
+//   play    wall time, when the viewer presses Play; it runs in presentation
+//           time, so the stretches marked for reading play slower
 // Renderers only ever see film time. React never sees per-frame values.
 //
 // While playing, the clock keeps the page scrolled to match, so the rail,
@@ -28,7 +29,7 @@ export class FilmClock {
   private introT = 0;       // a floor under scroll time while the opening plays itself
   private introRunning = false;
   private introStart = 0;
-  private playBase = 0;
+  private playBase = 0;   // presentation seconds
   private playStart = 0;
   private setScroll = -1;
   private renderers = new Set<Renderer>();
@@ -76,7 +77,7 @@ export class FilmClock {
   play() {
     if (this.playing) return;
     this.endIntro();
-    this.playBase = this.t >= RUNTIME - 0.05 ? 0 : this.t;
+    this.playBase = this.t >= RUNTIME - 0.05 ? 0 : toPresentation(this.t);
     this.playStart = performance.now();
     this.playing = true;
     document.documentElement.classList.add('is-playing');
@@ -101,7 +102,7 @@ export class FilmClock {
   seek(t: number) {
     t = Math.min(RUNTIME, Math.max(0, t));
     if (this.playing) {
-      this.playBase = t;
+      this.playBase = toPresentation(t);
       this.playStart = performance.now();
       this.wake();
     } else {
@@ -167,7 +168,7 @@ export class FilmClock {
         this.raf = requestAnimationFrame(this.frame);
         return;
       }
-      t = Math.min(RUNTIME, this.playBase + (now - this.playStart) / 1000);
+      t = Math.min(RUNTIME, fromPresentation(this.playBase + (now - this.playStart) / 1000));
       this.scrollT = t;
       this.syncScroll(t);
       if (t >= RUNTIME) {
