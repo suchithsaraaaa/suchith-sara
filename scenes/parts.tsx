@@ -1,0 +1,81 @@
+import type { CSSProperties, ReactNode } from 'react';
+
+// Shared building blocks for scene markup. Timing lives in data attributes
+// read by lib/cues.ts; see there for the effect vocabulary.
+
+type Fx = 'none' | 'fade' | 'rise' | 'wipe' | 'wipec' | 'track' | 'width' | 'draw' | 'pin' | 'cut';
+
+export function cue(tin: number, tout?: number, fx: Fx = 'fade', o: { d?: number; do?: number; drift?: number; x?: number; y?: number } = {}) {
+  const a: Record<string, string> = { 'data-in': String(tin), 'data-fx': fx };
+  if (tout !== undefined) a['data-out'] = String(tout);
+  if (o.d !== undefined) a['data-d'] = String(o.d);
+  if (o.do !== undefined) a['data-do'] = String(o.do);
+  if (o.drift !== undefined) a['data-drift'] = String(o.drift);
+  if (o.x !== undefined) a['data-x'] = String(o.x);
+  if (o.y !== undefined) a['data-y'] = String(o.y);
+  return a;
+}
+
+/** Text split into letters for the tracking-collapse effect; reads as one word to assistive tech. */
+export function Letters({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(' ').map((w, wi) => (
+        <span className="word" key={wi} aria-hidden="true">
+          {[...w].map((ch, i) => <span className="letter" data-letter key={i}>{ch}</span>)}
+        </span>
+      ))}
+      <span className="sr-only">{text}</span>
+    </>
+  );
+}
+
+/** Uppercase mono text that keeps the real casing of names like vLLM and mDNS. */
+export function KeepCase({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/(vLLM|mDNS)/).map((part, i) => (i % 2 ? <span className="nc" key={i}>{part}</span> : part))}
+    </>
+  );
+}
+
+/** A mono label on a leader line, placed in plate space (0–1 of the footage frame). */
+export function Pin({ x, y, tin, tout, label, sub, left, drift = 0.35 }: {
+  x: number; y: number; tin: number; tout: number; label: ReactNode; sub?: string; left?: boolean; drift?: number;
+}) {
+  return (
+    <div className={`pin mono${left ? ' pin--left' : ''}`} style={{ left: `${x * 100}%`, top: `${y * 100}%` }} {...cue(tin, tout, 'pin', { drift, x, y, do: 0.5 })}>
+      <span className="pin-body">
+        <span className="pin-dot" />
+        <span className="pin-leader" data-part="leader" />
+        <span className="pin-label" data-part="label">
+          {label}
+          {sub && <small>{sub}</small>}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+/** A scene's root: a full-stage layer that exists only inside its window. */
+export function Scene({ id, tin, tout, label, children, className, style }: {
+  id: string; tin: number; tout: number; label: string; children: ReactNode; className?: string; style?: CSSProperties;
+}) {
+  return (
+    <section className={`layer scene ${className ?? ''}`} data-scene={id} aria-label={label} {...cue(tin, tout, 'none')} style={style}>
+      {children}
+    </section>
+  );
+}
+
+/** Chapter mark: a role, surfacing inside the scene whose world it belongs to. */
+export function Chapter({ tin, tout, title, org, dates, note }: { tin: number; tout: number; title: string; org: string; dates: string; note?: string }) {
+  return (
+    <p className="chapter mono" {...cue(tin, tout, 'rise')}>
+      <b>{title}</b>
+      <span>{org}</span>
+      <span>{dates}</span>
+      {note && <span className="chapter-note">{note}</span>}
+    </p>
+  );
+}
