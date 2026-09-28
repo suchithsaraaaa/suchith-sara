@@ -1,39 +1,39 @@
 import { clipOrder, keyed, plateOpacity, plates, type ClipId, type Plate } from '@/content/plates';
 import { setStyle } from './anim';
 
-// Two <video> "decks", never more. The film (scroll, Play, the self-playing
-// opening) says which plates are visible at film time t and where each
-// should be; one loop decides, per frame, what each deck plays and shows.
+// Two <video> "decks", never more.
 //
-//   Moving   the deck plays natively with its rate chasing the film's target
-//            (feed-forward on the target's speed plus a spring on the gap).
-//            Seeking every frame is what stutters, so only backward motion
-//            and long jumps seek, and a long jump is a short dissolve to the
-//            other deck, pre-seeked, rather than a visible cut.
-//   Resting  the footage stays alive: it plays on at 1× and loops its last
-//            seconds, dissolving deck to deck at the loop point.
-//   Scene    two plates at once (a scene change) cross-dissolve; the
-//   change   outgoing one holds its frame so only one video decodes.
+// The footage flows; it is never scrubbed. Seeking a video to follow scroll
+// is what makes footage stutter, and correcting it back into sync after a
+// pause is what makes it jump. So within a plate the video only ever plays
+// forward, continuously:
+//
+//   rate  = max(1×, how fast the film is moving × the plate's own slope)
+//           eased toward its target so speed changes glide, clamped to 4×.
+//           At rest it plays at 1×; scrolling or Play pushes it faster.
+//   entry = when a plate first appears, its deck is positioned once, while
+//           still invisible, at the plate's frame for that film time.
+//   end   = near the end of the clip it dissolves into a second pass over
+//           its last seconds on the other deck, so it never freezes.
+//   exit  = a plate fading out holds its frame, so only one video decodes.
 //
 // Clips are fetched whole into memory in film order, so no frame waits on
 // the network, and a deck is never shown before its frame is decoded.
 // Reduced motion shows a still frame instead.
 
-type Deck = {
-  el: HTMLVideoElement;
-  clip: ClipId | null;
-  ready: boolean;
-  opacity: number;
-};
+type Deck = { el: HTMLVideoElement; clip: ClipId | null; ready: boolean; opacity: number; rate: number };
+type Want = { p: Plate; opacity: number };
 
-type Want = { p: Plate; target: number; opacity: number };
+const MAX_RATE = 4;
+const EASE = 0.08;    // playback-rate easing per frame
+const XFADE = 1.0;    // loop dissolve, seconds
+const LOOP_LEN = 5;   // the loop replays the clip's last seconds
 
-const FRAME = 1 / 24;
-const CHASE_MAX = 2.5; // seconds ahead that playback will chase
-const RESYNC = 0.35;   // gaps larger than this dissolve instead of cutting
-const XFADE = 0.9;     // loop dissolve, seconds
-const SYNC_FADE = 0.3; // resync dissolve, seconds
-const LOOP_LEN = 5;    // the resting loop covers the clip's last seconds
+/** The plate's video seconds per film second at t (its keyframe slope). */
+function slope(p: Plate, t: number) {
+  const a = keyed(p.v, t - 0.05), b = keyed(p.v, t + 0.05);
+  return Math.max(0, (b - a) / 0.1);
+}
 
 export class PlateManager {
   private decks: Deck[];
@@ -44,13 +44,10 @@ export class PlateManager {
 
   private t = 0;
   private wants: Want[] = [];
-  private idle = false;
-  private vel = 0;        // target speed, video s per real s (smoothed)
+  private speed = 0;     // film seconds per real second (smoothed)
   private stamp = 0;
-  private lastTarget = 0;
   private main: Deck | null = null;
-  private fade: { from: Deck; to: Deck; start: number; dur: number } | null = null;
-  private pending: { deck: Deck; time: number; dur: number } | null = null;
+  private loop: { from: Deck; to: Deck; start: number } | null = null;
 
   constructor(videos: HTMLVideoElement[], private reduced: boolean) {
     this.portrait = window.innerWidth / window.innerHeight < 0.8;
@@ -61,9 +58,8 @@ export class PlateManager {
       el.defaultMuted = true;
       el.setAttribute('muted', '');
       el.playsInline = true;
-      const deck: Deck = { el, clip: null, ready: false, opacity: 0 };
+      const deck: Deck = { el, clip: null, ready: false, opacity: 0, rate: 1 };
       el.addEventListener('loadeddata', () => { deck.ready = true; this.kick(); });
-      el.addEventListener('seeked', () => this.kick());
       return deck;
     });
   }
@@ -86,14 +82,15 @@ export class PlateManager {
     return p;
   }
 
+  /** Puts a clip on a deck at a time. The deck shows nothing until that frame is decoded. */
   private load(deck: Deck, clip: ClipId, at: number) {
-    if (deck.clip === clip) {
-      if (deck.ready && Math.abs(deck.el.currentTime - at) > FRAME) deck.el.currentTime = at;
+    const { el } = deck;
+    if (deck.clip === clip && el.src) {
+      el.currentTime = at;
       return;
     }
     deck.clip = clip;
     deck.ready = false;
-    const { el } = deck;
     el.pause();
     el.removeAttribute('src');
     el.poster = `/media/${clip}${this.reduced ? '-still' : ''}-${this.variant()}.webp`;
@@ -117,40 +114,22 @@ export class PlateManager {
       .catch(() => {});
   }
 
-  // ---- inputs from the film ----------------------------------------------
+  // ---- input from the film -------------------------------------------------
 
   /** Called by the clock whenever film time changes. */
   render(t: number) {
-    this.t = t;
-    const wants: Want[] = [];
-    for (const p of plates) {
-      const opacity = plateOpacity(p, t);
-      if (opacity <= 0.001) continue;
-      // A plate fading out holds its frame, so only one video decodes at a time.
-      const target = keyed(p.v, p.fo && t > p.t1 - p.fo ? p.t1 - p.fo : t);
-      wants.push({ p, target, opacity });
-    }
-    this.wants = wants.slice(0, 2);
-
-    // How fast the target moves, for feed-forward.
     const now = performance.now();
-    const single = this.wants.length === 1 ? this.wants[0] : null;
     const dt = (now - this.stamp) / 1000;
-    if (single && this.stamp && dt > 0 && dt < 0.25 && single.p.clip === this.main?.clip) {
-      this.vel += ((single.target - this.lastTarget) / dt - this.vel) * 0.25;
-    } else {
-      this.vel = 0;
+    if (this.stamp && dt > 0 && dt < 0.25) {
+      const v = Math.max(0, (t - this.t) / dt); // backward motion does not reverse footage
+      this.speed += (v - this.speed) * 0.2;
     }
-    if (single) this.lastTarget = single.target;
     this.stamp = now;
-    this.kick();
-  }
-
-  /** At rest the footage plays on and loops; moving again, it rejoins the film. */
-  setIdle(idle: boolean) {
-    if (idle === this.idle) return;
-    this.idle = idle;
-    if (idle) this.vel = 0;
+    this.t = t;
+    this.wants = plates
+      .map((p) => ({ p, opacity: plateOpacity(p, t) }))
+      .filter((w) => w.opacity > 0.001)
+      .slice(0, 2);
     this.kick();
   }
 
@@ -169,168 +148,131 @@ export class PlateManager {
     setStyle(deck.el, 'opacity', (deck.ready ? opacity : 0).toFixed(3));
   }
 
-  private frame = () => {
-    this.raf = 0;
-    if (this.reduced) return this.stills();
-    if (performance.now() - this.stamp > 140) this.vel = 0; // the target has stopped moving
-
-    let busy = false;
-    if (this.wants.length === 0) {
-      this.fade = null; this.pending = null; this.main = null;
-      for (const d of this.decks) { this.show(d, 0); if (!d.el.paused) d.el.pause(); }
-      this.preload();
-    } else if (this.wants.length === 2) {
-      busy = this.sceneChange();
-    } else {
-      busy = this.single(this.wants[0]);
-    }
-    if (busy) this.kick();
-  };
-
-  /** Reduced motion: each visible plate is its still frame. */
-  private stills() {
-    this.wants.forEach((w, i) => {
-      const deck = this.decks.find((d) => d.clip === w.p.clip) ?? this.decks[i];
-      this.load(deck, w.p.clip, 0);
-      this.show(deck, w.opacity);
-    });
-    for (const d of this.decks) if (!this.wants.some((w) => w.p.clip === d.clip)) this.show(d, 0);
+  /** Plays a deck at an eased rate. */
+  private flow(deck: Deck, target: number) {
+    deck.rate += (target - deck.rate) * EASE;
+    const { el } = deck;
+    if (Math.abs(el.playbackRate - deck.rate) > 0.02) el.playbackRate = deck.rate;
+    if (el.paused && deck.ready && el.src && !el.ended) el.play().catch(() => {});
   }
 
-  /** Two plates: give each a deck, chase both, cross-dissolve by film time. */
+  private hold(deck: Deck) {
+    if (!deck.el.paused) deck.el.pause();
+  }
+
+  private frame = () => {
+    this.raf = 0;
+    if (performance.now() - this.stamp > 150) this.speed *= 0.85; // the film has come to rest
+
+    if (this.reduced) {
+      this.wants.forEach((w, i) => {
+        const deck = this.decks.find((d) => d.clip === w.p.clip) ?? this.decks[i];
+        if (deck.clip !== w.p.clip) this.load(deck, w.p.clip, 0);
+        this.show(deck, w.opacity);
+      });
+      for (const d of this.decks) if (!this.wants.some((w) => w.p.clip === d.clip)) this.show(d, 0);
+      return;
+    }
+
+    if (this.wants.length === 0) {
+      this.main = null;
+      this.loop = null;
+      for (const d of this.decks) { this.show(d, 0); this.hold(d); }
+      this.preload();
+    } else if (this.wants.length === 2) {
+      this.sceneChange();
+    } else {
+      this.single(this.wants[0]);
+    }
+    this.kick();
+  };
+
+  /** Two plates: each on its own deck, cross-dissolving by film time. */
   private sceneChange() {
-    this.fade = null; this.pending = null;
-    let busy = false;
+    this.loop = null;
     const used = new Set<Deck>();
     for (const w of this.wants) {
       let deck = this.decks.find((d) => d.clip === w.p.clip && !used.has(d));
       if (!deck) {
         deck = this.decks.find((d) => !used.has(d) && !this.wants.some((x) => x.p.clip === d.clip)) ?? this.decks.find((d) => !used.has(d))!;
-        this.load(deck, w.p.clip, w.target);
+        this.load(deck, w.p.clip, keyed(w.p.v, this.t));
       }
       used.add(deck);
       this.show(deck, w.opacity);
-      busy = this.chase(deck, w.target, 0) || busy;
+      const leaving = w.p.fo > 0 && this.t > w.p.t1 - w.p.fo;
+      if (leaving) this.hold(deck); else this.flow(deck, this.rateFor(w.p));
     }
-    // The incoming plate becomes the main deck.
     const incoming = this.wants.reduce((a, b) => (a.p.t0 > b.p.t0 ? a : b));
     this.main = this.decks.find((d) => d.clip === incoming.p.clip) ?? null;
-    return busy;
   }
 
-  /** One plate on screen. */
+  /** One plate: flow, and loop its tail by dissolving deck to deck. */
   private single(w: Want) {
-    const now = performance.now();
     const clip = w.p.clip;
     if (!this.main || this.main.clip !== clip) {
+      this.loop = null;
       this.main = this.decks.find((d) => d.clip === clip) ?? this.decks.find((d) => d.opacity < 0.01) ?? this.decks[0];
-      this.load(this.main, clip, w.target);
-      this.fade = null; this.pending = null;
+      if (this.main.clip !== clip) this.load(this.main, clip, keyed(w.p.v, this.t));
     }
     const main = this.main;
     const other = this.other(main);
+    const rate = this.rateFor(w.p);
 
-    // A dissolve in progress (loop point or resync).
-    if (this.fade) {
-      const { from, to } = this.fade;
-      const k = Math.min(1, (now - this.fade.start) / (this.fade.dur * 1000));
-      this.show(to, w.opacity * k);
-      this.show(from, w.opacity * (1 - k));
-      if (this.idle) this.playAt(to, 1); else this.chase(to, w.target, this.vel);
+    if (this.loop) {
+      const { from, to } = this.loop;
+      const k = Math.min(1, (performance.now() - this.loop.start) / (XFADE * 1000));
+      const eased = k * k * (3 - 2 * k);
+      this.show(to, w.opacity * eased);
+      this.show(from, w.opacity * (1 - eased));
+      this.flow(to, rate);
+      this.hold(from); // the outgoing pass freezes as it fades: one decode at a time
       if (k >= 1) {
-        from.el.pause();
+        this.hold(from);
         this.show(from, 0);
         this.main = to;
-        this.fade = null;
+        this.loop = null;
       }
-      return true;
-    }
-
-    // Waiting for the other deck to decode its frame before dissolving to it.
-    if (this.pending) {
-      const { deck, time, dur } = this.pending;
-      this.show(main, w.opacity);
-      this.show(other, 0);
-      if (this.idle) this.playAt(main, 1);
-      if (deck.ready && !deck.el.seeking && Math.abs(deck.el.currentTime - time) < 0.1) {
-        this.pending = null;
-        this.fade = { from: main, to: deck, start: now, dur };
-        if (this.idle) this.playAt(deck, 1);
-      }
-      return true;
+      return;
     }
 
     this.show(main, w.opacity);
     this.show(other, 0);
-    // Near a scene change, the spare deck decodes the next clip in advance.
-    const next = this.neighbour(3.5);
-    if (next && other.clip !== next.clip) this.load(other, next.clip, keyed(next.v, next.t0 > this.t ? next.t0 : next.t1));
-    if (!main.ready || !main.el.src) return true;
+    this.flow(main, rate);
+
     const el = main.el;
-    const end = (el.duration || 10) - 0.05;
+    if (!main.ready || !el.duration) return;
+    const end = el.duration - 0.05;
+    const loopAt = Math.max(0, end - LOOP_LEN);
+    const next = plates.find((p) => p.clip !== clip && p.t0 > this.t && p.t0 - this.t < 3);
 
-    if (this.idle) {
-      // Resting: play on at 1×; near the end, dissolve back into the loop.
-      this.playAt(main, 1);
-      if (el.currentTime >= end - XFADE) this.dissolveTo(other, clip, Math.max(0, end - LOOP_LEN), XFADE);
-      return true;
+    // Well before the loop point, the spare deck decodes the next scene's
+    // clip, so a scene change never waits on a first frame.
+    if (next && el.currentTime < end - XFADE - 1.2) {
+      if (other.clip !== next.clip && other.opacity < 0.01) this.load(other, next.clip, keyed(next.v, next.t0));
+      return;
     }
+    if (next && next.t0 - this.t < 1.2) return; // the scene change will cover the end
 
-    // Moving: follow the film. A big gap dissolves instead of jumping.
-    const d = w.target - el.currentTime;
-    const chaseable = d > -0.2 && d < CHASE_MAX && (d > 0 || this.vel > 0.05);
-    if (Math.abs(d) > RESYNC && !chaseable) {
-      this.dissolveTo(other, clip, w.target, SYNC_FADE);
-      return true;
+    // Prepare the loop's second pass on the other deck, then dissolve into it.
+    if (el.currentTime >= end - XFADE - 0.6 && (other.clip !== clip || Math.abs(other.el.currentTime - loopAt) > 0.2) && other.opacity < 0.01) {
+      this.load(other, clip, loopAt);
+      this.hold(other);
     }
-    return this.chase(main, w.target, this.vel);
+    if (el.currentTime >= end - XFADE && other.clip === clip && other.ready && !other.el.seeking) {
+      this.loop = { from: main, to: other, start: performance.now() };
+      other.rate = main.rate;
+    }
   }
 
-  private dissolveTo(deck: Deck, clip: ClipId, time: number, dur: number) {
-    this.load(deck, clip, time);
-    deck.el.pause();
-    this.pending = { deck, time, dur };
-  }
-
-  private playAt(deck: Deck, rate: number) {
-    const el = deck.el;
-    if (Math.abs(el.playbackRate - rate) > 0.02) el.playbackRate = rate;
-    if (el.paused && deck.ready && el.src) el.play().catch(() => {});
-  }
-
-  /** Move a deck toward a target time. Returns true while still moving. */
-  private chase(deck: Deck, target: number, vel: number) {
-    const el = deck.el;
-    if (!deck.ready || !el.src) return true;
-    const d = target - el.currentTime;
-    const moving = vel > 0.05;
-    if (!moving && Math.abs(d) <= FRAME * 0.75) {
-      if (!el.paused) el.pause();
-      return false;
-    }
-    if (d > -0.2 && d < CHASE_MAX && (d > 0 || moving)) {
-      this.playAt(deck, Math.min(4, Math.max(0.25, vel + d * 2.5)));
-    } else if (!el.seeking) {
-      if (!el.paused) el.pause();
-      el.currentTime = target;
-    }
-    return true;
-  }
-
-  /** The plate that starts within `ahead` seconds, or ended within half that. */
-  private neighbour(ahead: number): Plate | null {
-    const t = this.t;
-    const current = this.wants[0]?.p.clip;
-    return plates.find((p) => p.clip !== current && p.t0 > t && p.t0 - t < ahead)
-      ?? [...plates].reverse().find((p) => p.clip !== current && p.t1 < t && t - p.t1 < ahead / 2)
-      ?? null;
+  private rateFor(p: Plate) {
+    return Math.min(MAX_RATE, Math.max(1, this.speed * slope(p, this.t)));
   }
 
   /** Nothing on screen: warm a deck with the clip the viewer is heading toward. */
   private preload() {
     const deck = this.decks.find((d) => d.opacity < 0.01);
-    const next = this.neighbour(12);
-    if (deck && next && !this.decks.some((d) => d.clip === next.clip)) this.load(deck, next.clip, next.v[0][1]);
+    const next = plates.find((p) => p.t0 > this.t && p.t0 - this.t < 12);
+    if (deck && next && !this.decks.some((d) => d.clip === next.clip)) this.load(deck, next.clip, keyed(next.v, next.t0));
   }
 
   dispose() {

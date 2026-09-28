@@ -6,8 +6,11 @@ export const clamp = (x: number, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
 /** 0 before t0, 1 after t1, linear between. */
 export const range = (t: number, t0: number, t1: number) => clamp((t - t0) / (t1 - t0));
 
-/** Motion token "settle": cubic-bezier(.16, 1, .3, 1) approximated by an expo-out. */
-export const settle = (x: number) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+/** Motion token "settle": a soft cubic ease-out. Nothing snaps into place. */
+export const settle = (x: number) => 1 - Math.pow(1 - x, 3);
+
+/** Symmetric ease for hand-offs (smoothstep). */
+export const smooth = (x: number) => x * x * (3 - 2 * x);
 
 export const inOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 

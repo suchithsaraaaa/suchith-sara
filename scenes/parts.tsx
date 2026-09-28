@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 // Shared building blocks for scene markup. Timing lives in data attributes
 // read by lib/cues.ts; see there for the effect vocabulary.
 
-type Fx = 'none' | 'fade' | 'rise' | 'wipe' | 'wipec' | 'track' | 'width' | 'draw' | 'pin' | 'cut';
+type Fx = 'none' | 'fade' | 'rise' | 'roll' | 'wipe' | 'wipec' | 'track' | 'width' | 'draw' | 'pin' | 'cut';
 
 export function cue(tin: number, tout?: number, fx: Fx = 'fade', o: { d?: number; do?: number; drift?: number; x?: number; y?: number } = {}) {
   const a: Record<string, string> = { 'data-in': String(tin), 'data-fx': fx };
@@ -65,6 +65,41 @@ export function Scene({ id, tin, tout, label, children, className, style }: {
     <section className={`layer scene ${className ?? ''}`} data-scene={id} aria-label={label} {...cue(tin, tout, 'none')} style={style}>
       {children}
     </section>
+  );
+}
+
+/**
+ * A readout that changes in place: one stage at a time, each rolling in and
+ * handing off upward to the next, with a rail showing how far along it is.
+ * Anchored lower-left, like a film's lower third, so nothing appears out of
+ * nowhere.
+ */
+export function Stages({ items, tin, step, tout, label }: {
+  items: { name: ReactNode; sub?: ReactNode }[]; tin: number; step: number; tout: number; label: string;
+}) {
+  const n = items.length;
+  return (
+    <div className="stages" aria-label={label} {...cue(tin, tout, 'none')}>
+      <ol className="stage-list">
+        {items.map((it, i) => {
+          // Hand-offs never overlap: each stage has fully left before the next arrives.
+          const a = tin + i * step + (i ? 0.04 : 0);
+          const b = i === n - 1 ? tout : tin + (i + 1) * step;
+          return (
+            <li key={i} className="stage-item" {...cue(a, b, 'roll', { d: 0.5, do: 0.35 })}>
+              <span className="mono stage-n">{String(i + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}</span>
+              <span className="stage-name">{it.name}</span>
+              {it.sub && <span className="mono stage-sub">{it.sub}</span>}
+            </li>
+          );
+        })}
+      </ol>
+      <div className="stage-rail" aria-hidden="true">
+        {items.map((_, i) => (
+          <span key={i} className="stage-tick"><b {...cue(tin + i * step + 0.1, tout, 'fade', { d: 0.6, do: 0.55 })} /></span>
+        ))}
+      </div>
+    </div>
   );
 }
 

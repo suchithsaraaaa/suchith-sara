@@ -1,4 +1,4 @@
-import { range, setStyle, settle } from './anim';
+import { range, setStyle, settle, smooth } from './anim';
 
 // Declarative choreography. Scene markup carries its own timing:
 //   data-in="9.2" data-out="12" data-fx="wipe" data-d="0.5" data-do="0.4"
@@ -10,6 +10,7 @@ import { range, setStyle, settle } from './anim';
 //   none   window only        fade   opacity           rise   fade + lift
 //   wipe   mask from left     wipec  mask from centre  track  tracking collapse
 //   width  condensed → full   draw   SVG stroke draw   pin    leader line + label
+//   roll   rises in, then hands off upward (for a readout that changes in place)
 //   cut    hard on, hard off
 
 type Cue = {
@@ -37,8 +38,8 @@ export function collectCues(root: ParentNode): Cue[] {
       fx,
       tin: num(ds.in, 0),
       tout: num(ds.out, Infinity),
-      d: num(ds.d, fx === 'cut' ? 0 : 0.5),
-      dout: num(ds.do, fx === 'cut' ? 0 : 0.4),
+      d: num(ds.d, fx === 'cut' ? 0 : 0.8),
+      dout: num(ds.do, fx === 'cut' ? 0 : 0.6),
       drift: num(ds.drift, 0),
       x: num(ds.x, 0.5),
       y: num(ds.y, 0.5),
@@ -82,9 +83,16 @@ export function createCueRenderer(cues: Cue[], reduced: boolean) {
           setStyle(el, 'opacity', (p * (1 - q)).toFixed(3));
           if (drift) setStyle(el, 'transform', drift);
           break;
+        case 'roll': {
+          const a = smooth(range(t, c.tin, c.tin + c.d));
+          const b = c.tout === Infinity ? 0 : smooth(range(t, c.tout - c.dout, c.tout));
+          setStyle(el, 'opacity', (a * (1 - b)).toFixed(3));
+          setStyle(el, 'transform', `translate3d(0,${((1 - a) * 22 - b * 22).toFixed(2)}px,0)`);
+          break;
+        }
         case 'rise':
           setStyle(el, 'opacity', (p * (1 - q)).toFixed(3));
-          setStyle(el, 'transform', `translate3d(0,${((1 - p) * 14).toFixed(2)}px,0)`);
+          setStyle(el, 'transform', `translate3d(0,${((1 - p) * 18).toFixed(2)}px,0)`);
           break;
         case 'wipe':
           setStyle(el, 'opacity', (1 - q).toFixed(3));

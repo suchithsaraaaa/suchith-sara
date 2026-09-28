@@ -218,7 +218,7 @@ body {
 
 .chapters {
   position: absolute;
-  left: var(--gutter);
+  right: var(--gutter);
   bottom: calc(var(--gutter) + 84px);
   display: flex;
   gap: 40px;
@@ -249,6 +249,50 @@ body {
   color: var(--steel);
   white-space: nowrap;
 }
+
+/* A readout that changes in place (scenes 02 and 03). */
+.stages {
+  position: absolute;
+  left: var(--inset);
+  bottom: calc(var(--gutter) + 96px);
+  width: min(720px, calc(100vw - 2 * var(--inset)));
+}
+
+.stage-list {
+  position: relative;
+  height: clamp(118px, 12vw, 150px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage-item {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  will-change: transform, opacity;
+}
+
+.stage-n { font-size: 10px; letter-spacing: 0.26em; color: var(--steel); }
+
+.stage-name {
+  font-size: clamp(34px, 4vw, 64px);
+  line-height: 1;
+  font-weight: 250;
+  font-stretch: 112%;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-shadow: 0 0 28px rgba(2, 4, 6, 0.85);
+}
+
+.stage-sub { font-size: 11px; letter-spacing: 0.2em; color: var(--signal); text-shadow: 0 0 12px rgba(2, 4, 6, 0.9); }
+
+.stage-rail { display: flex; gap: 6px; margin-top: 22px; }
+.stage-tick { position: relative; width: 28px; height: 2px; background: rgba(233, 231, 225, 0.16); }
+.stage-tick b { position: absolute; inset: 0; background: var(--bone); will-change: opacity; }
 
 /* A pin is a zero-size anchor at a point in the footage. */
 .pin { position: absolute; width: 0; height: 0; will-change: transform, opacity; }
@@ -962,7 +1006,9 @@ body {
   .origin-roles { flex-direction: column; align-items: flex-start; gap: 10px; }
   .origin-edge, .corner--br, .ticker, .online-side, .pin--left { display: none; }
   .lower-left, .online { bottom: calc(var(--gutter) + 120px); }
-  .chapters { flex-direction: column; gap: 14px; bottom: calc(var(--gutter) + 60px); }
+  .chapters { flex-direction: column; gap: 14px; bottom: auto; top: calc(var(--gutter) + 96px); right: var(--gutter); }
+  .stage-name { font-size: 30px; white-space: normal; max-width: 86vw; }
+  .stages { bottom: calc(var(--gutter) + 64px); }
   .flow { font-size: 9px; bottom: calc(var(--gutter) + 40px); }
   .flow li + li::before { margin: 0 8px; }
   .title-l--low { bottom: calc(var(--gutter) + 180px); }

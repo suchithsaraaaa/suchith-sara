@@ -72,13 +72,8 @@ export function Film({ children }: { children: React.ReactNode }) {
       if (t === lastT) return;
       lastT = t;
       stage.classList.add('is-moving');
-      plates.setIdle(false);
       clearTimeout(rest);
-      rest = window.setTimeout(() => {
-        stage.classList.remove('is-moving');
-        // At rest the footage plays on and loops, so no scene is ever a still.
-        plates.setIdle(true);
-      }, 600);
+      rest = window.setTimeout(() => stage.classList.remove('is-moving'), 800);
     }));
 
     // Play / pause controls reflect the clock's state.
