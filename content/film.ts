@@ -141,11 +141,14 @@ export const nestiq = {
 
 export const contact = {
   github: 'https://github.com/suchithsaraaaa',
-  email: 'suchithssara@gmail.com',
+  email: 'suchithsara.work@gmail.com',
   linkedin: 'https://www.linkedin.com/in/suchith-sara-903133339/',
-  // The resume linked from the GitHub profile; override with NEXT_PUBLIC_RESUME_URL when a hosted PDF exists.
-  resume: process.env.NEXT_PUBLIC_RESUME_URL || 'https://drive.google.com/file/d/1DdjjQztchptK5eMELG5N1i9oC0_Wm7yk/view?usp=sharing',
+  // Served from this site (public/); override with NEXT_PUBLIC_RESUME_URL.
+  resume: process.env.NEXT_PUBLIC_RESUME_URL || '/Suchith_Sara_Resume.docx',
 };
+
+/** Opens a new message to the contact address in Gmail. */
+export const gmailCompose = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}`;
 
 // ---- Film structure --------------------------------------------------------
 

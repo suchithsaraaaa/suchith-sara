@@ -1,11 +1,11 @@
-import { contact, person, recognition, skills } from '@/content/film';
+import { contact, gmailCompose, person, recognition, skills } from '@/content/film';
 import { cue, Letters, Scene } from './parts';
 
 // 08 · Contact, 84–90 s. The film rests here.
 export function Contact() {
   const links: { label: string; href: string | null }[] = [
     { label: 'GitHub', href: contact.github },
-    { label: 'Email', href: `mailto:${contact.email}` },
+    { label: 'Email', href: gmailCompose },
     { label: 'LinkedIn', href: contact.linkedin },
     { label: 'Resume', href: contact.resume },
   ];
@@ -37,7 +37,7 @@ export function Contact() {
       <nav className="contact-links mono" aria-label="Contact">
         {links.map((l, i) =>
           l.href ? (
-            <a key={l.label} href={l.href} {...(l.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})} {...cue(87.1 + i * 0.1, undefined, 'rise', { d: 0.4 })}>{l.label}</a>
+            <a key={l.label} href={l.href} {...(l.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : l.href.endsWith('.docx') ? { download: '' } : {})} {...cue(87.1 + i * 0.1, undefined, 'rise', { d: 0.4 })}>{l.label}</a>
           ) : (
             <span key={l.label} className="is-pending" aria-disabled="true" title="Available soon" {...cue(87.1 + i * 0.1, undefined, 'rise', { d: 0.4 })}>{l.label}</span>
           ),

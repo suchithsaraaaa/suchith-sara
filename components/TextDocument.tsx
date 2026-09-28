@@ -1,5 +1,5 @@
 import {
-  aiStack, certifications, contact, experience, mapStory, nestiq, person, recognition, resqmesh, skills, softwareStack,
+  aiStack, certifications, contact, experience, gmailCompose, mapStory, nestiq, person, recognition, resqmesh, skills, softwareStack,
 } from '@/content/film';
 
 // The whole film as a plain document: the "Read as text" route and the
@@ -67,9 +67,9 @@ export function TextDocument({ filmHref }: { filmHref?: string }) {
       <p>Building systems for the real world. Let’s build something difficult.</p>
       <ul>
         <li><a href={contact.github}>GitHub</a></li>
-        <li><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
+        <li><a href={gmailCompose} target="_blank" rel="noopener">{contact.email}</a></li>
         <li><a href={contact.linkedin}>LinkedIn</a></li>
-        {contact.resume && <li><a href={contact.resume}>Resume</a></li>}
+        {contact.resume && <li><a href={contact.resume} download>Resume (.docx)</a></li>}
       </ul>
     </article>
   );
