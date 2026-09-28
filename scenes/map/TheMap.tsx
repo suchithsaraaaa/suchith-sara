@@ -1,5 +1,6 @@
 import { mapStory } from '@/content/film';
-import { cue, Scene } from '../parts';
+import { experience } from '@/content/film';
+import { cue, Scene, Spotlight } from '../parts';
 import { MAP_T, stationPoints } from './geometry';
 
 const fmt = (n: number) => n.toLocaleString('en-US');
@@ -8,6 +9,7 @@ const fmt = (n: number) => n.toLocaleString('en-US');
 // Footage (map-a/b/c/e) carries the city; everything countable is drawn here.
 export function TheMap() {
   const stations = stationPoints();
+  const role = experience.find((r) => r.scene === 'real-world')!;
   const T = MAP_T;
   return (
     <Scene id="the-map" tin={40.1} tout={70.3} label={mapStory.title}>
@@ -96,13 +98,23 @@ export function TheMap() {
 
       {/* 13 · it was the operation */}
       <div className="operation">
-        <p className="statement dim" {...cue(68.3, 70.1, 'wipe', { d: 0.7 })}>The map wasn’t a visualization.</p>
-        <p className="statement" {...cue(68.95, 70.1, 'wipe', { d: 0.7 })}>It was the operation.</p>
+        <p className="statement dim" {...cue(68.3, 69.2, 'wipe', { d: 0.35, do: 0.15 })}>The map wasn’t a visualization.</p>
+        <p className="statement" {...cue(68.6, 69.2, 'wipe', { d: 0.35, do: 0.15 })}>It was the operation.</p>
       </div>
-      <p className="credit mono" {...cue(69.4, 70.1, 'rise')}>
-        <b>{mapStory.client}</b>
-        <span>Technical Engineer Intern</span>
-      </p>
+
+      {/* The role behind it, centre stage. Every line is a supplied fact. */}
+      <Spotlight
+        tin={69.22}
+        tout={70.05}
+        title={role.title}
+        org={role.org}
+        dates={role.dates}
+        lines={[
+          `Built the web system for ${mapStory.purpose.toLowerCase()} across ${mapStory.city}.`,
+          `Required to serve ${fmt(mapStory.requirement)} concurrent users. It held ${fmt(mapStory.held)}.`,
+          `${mapStory.idols} registered idols across ${mapStory.stations} police stations, followed live.`,
+        ]}
+      />
 
       <p className="caption mono" {...cue(42, 68.3, 'fade', { d: 1 })}>{mapStory.caption}</p>
     </Scene>

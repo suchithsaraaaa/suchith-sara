@@ -17,7 +17,7 @@ import { createHudRenderer, Hud, PlayIcon } from './Hud';
 const POINT: [number, number, number, number][] = [
   [-1, 0, 1.2, 2.0],
   [38.3, 38.9, 42.3, 42.9],
-  [69.5, 69.9, 74.2, 74.6],
+  [70.0, 70.3, 74.2, 74.6],
   [77.5, 77.8, 78.1, 78.4],
   [84.0, 84.4, 85.2, 85.8],
 ];
@@ -138,6 +138,10 @@ export function Film({ children }: { children: React.ReactNode }) {
       } else if (target.closest('[data-replay]')) {
         go(0);
         clock.play();
+      } else if (target.closest('[data-cta]')) {
+        // The big Play is the moment someone commits to watching: bring the sound up with it.
+        if (!sound.enabled) toggleSound();
+        clock.play();
       } else if (target.closest('[data-play]')) {
         clock.toggle();
       } else if (target.closest('[data-sound]')) {
@@ -180,6 +184,7 @@ export function Film({ children }: { children: React.ReactNode }) {
           <button type="button" className="cta-play" data-play aria-pressed="false" aria-label="Play the film">
             <PlayIcon />
             <span className="mono">Play the film</span>
+            <span className="mono cta-len">Sound on</span>
             <span className="mono cta-len">{formatLength()}</span>
           </button>
           <p className="mono cta-or">or scroll at your own pace</p>
