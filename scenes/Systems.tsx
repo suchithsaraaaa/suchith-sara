@@ -6,7 +6,7 @@ import { cue, Scene, Spotlight, Stages } from './parts';
 // reads out in place; the mesh becomes the word; then the work behind it
 // takes the stage.
 export function Systems() {
-  const [meta, aws] = experience.filter((r) => r.scene === 'systems');
+  const meta = experience.find((r) => r.scene === 'systems')!;
   return (
     <Scene id="systems" tin={18.1} tout={28.3} label="Systems">
       <Stages
@@ -25,7 +25,7 @@ export function Systems() {
       <h2 className="systems-word" {...cue(24.5, 25.8, 'width', { d: 0.5, do: 0.3 })}>Systems</h2>
       <Spotlight
         tin={25.8}
-        tout={27.2}
+        tout={27.98}
         title={meta.title}
         org={meta.org}
         dates={meta.dates}
@@ -34,14 +34,6 @@ export function Systems() {
           'Database performance and storage efficiency improved by 40%.',
           '7+ workflows automated with webhooks and integrations.',
         ]}
-      />
-      <Spotlight
-        tin={27.2}
-        tout={27.98}
-        title={aws.title}
-        org={aws.org}
-        dates={aws.dates}
-        lines={['Cloud Architecting and Cloud Foundations certifications.']}
       />
     </Scene>
   );

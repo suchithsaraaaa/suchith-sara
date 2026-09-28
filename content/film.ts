@@ -49,7 +49,7 @@ export const experience: Role[] = [
     ],
   },
   {
-    title: 'Cloud Virtual Internship', org: 'AWS Academy', dates: 'Oct–Dec 2024', scene: 'systems',
+    title: 'Cloud Virtual Internship', org: 'AWS Academy', dates: 'Oct–Dec 2024', scene: null,
     notes: ['AWS Academy Cloud Architecting and Cloud Foundations certifications.'],
   },
   {
